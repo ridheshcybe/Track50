@@ -1,0 +1,10 @@
+@supabase/supabase-js
+@types/body-parser
+@types/express-session
+bcrypt
+body-parser
+cybe-socket
+dotenv
+express
+express-session
+express-ws
