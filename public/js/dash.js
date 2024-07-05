@@ -62,7 +62,7 @@
     Chart.defaults.color = "#FFFFFF";
     Chart.defaults.borderColor = "#000000";
 
-    fetch('/api/getcategory').then(res => res.json()).then(data => {
+    fetch('/getcategory').then(res => res.json()).then(data => {
         // Parse the data and convert created_at to Date objects
         data.forEach(item => {
             item.created_at = new Date(item.created_at);
@@ -125,13 +125,13 @@
         });
     }).catch(alert)
 
-    fetch('/api/getmetrics').then(res => res.json()).then(data => {
+    fetch('/getmetrics').then(res => res.json()).then(data => {
         document.getElementById('unique_visits').innerText = data[0]['unique_visits'];
         document.getElementById('avg_duration').innerText = data[0]['avg_duration'];
         document.getElementById('bounce_rate').innerText = data[0]['bounce_rate'];
     }).catch(alert)
 
-    fetch('/api/getinfo').then(e => e.text()).then(e => {
+    fetch('/getinfo').then(e => e.text()).then(e => {
         document.getElementById('username').innerText = e;
     }).catch(alert)
 })(jQuery);

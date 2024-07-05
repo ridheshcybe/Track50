@@ -99,7 +99,7 @@ class SocketManager extends EventEmitter {
 
 const data = {};
 let username = `😯username😯`;
-let serverlocation = `😯serverlocation😯`;
+let serverlocation = `https://track50.vercel.app/track50`;
 data.username = username;
 
 const session = localStorage.getItem("smartconfig");

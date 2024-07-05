@@ -162,17 +162,11 @@ app.get("/:username/track50.js", (req, res) => {
         username: {
             type: 'string',
             value: req.params.username
-        },
-        serverlocation: {
-            type: 'string',
-            value: `${req.protocol}://${req.get('host')}/track50`
         }
     }))
 });
 
-
-
-app.get('/api/getcategory', async (req, res) => {
+app.get('/getcategory', async (req, res) => {
     const { data, error } = await supabase
         .from('data')
         .select('browser_catagory,created_at')
@@ -186,7 +180,7 @@ app.get('/api/getcategory', async (req, res) => {
     }
 });
 
-app.get('/api/getmetrics', async (req, res) => {
+app.get('/getmetrics', async (req, res) => {
     const { data, error } = await supabase
         .from('user_reg_data')
         .select('unique_visits,avg_duration,bounce_rate')
@@ -200,7 +194,7 @@ app.get('/api/getmetrics', async (req, res) => {
     }
 })
 
-app.post('/api/signup', authpageRedirect(), async (req, res) => {
+app.post('/signup', authpageRedirect(), async (req, res) => {
     const { username, password, confirmation } = req.body;
 
     if (!username || username === "") {
@@ -258,7 +252,7 @@ app.post('/api/signup', authpageRedirect(), async (req, res) => {
     res.send("/dashboard");
 });
 
-app.post('/api/login', authpageRedirect(), async (req, res) => {
+app.post('/login', authpageRedirect(), async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || username === "") {
@@ -293,7 +287,7 @@ app.post('/api/login', authpageRedirect(), async (req, res) => {
     }
 });
 
-app.get('/api/getlocations', dashboardRedirect(), async (req, res) => {
+app.get('/getlocations', dashboardRedirect(), async (req, res) => {
     let { data, error } = await supabase
         .from('data')
         .select('ip_loc')
@@ -312,7 +306,7 @@ app.get('/api/getlocations', dashboardRedirect(), async (req, res) => {
     }
 });
 
-app.get('/api/getlocationsall', async (req, res) => {
+app.get('/getlocationsall', async (req, res) => {
     let { data, error } = await supabase
         .from('data')
         .select('ip_loc')
@@ -330,7 +324,7 @@ app.get('/api/getlocationsall', async (req, res) => {
     }
 });
 
-app.get('/api/getinfo', dashboardRedirect(), (req, res) => {
+app.get('/getinfo', dashboardRedirect(), (req, res) => {
     res.send(req.session.user);
 })
 

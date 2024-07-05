@@ -3,7 +3,7 @@ import createGlobe from 'https://cdn.skypack.dev/cobe'
 let phi = 0
 let canvas = document.getElementById("cobe")
 
-fetch('/api/getlocations').then(res => res.json()).then(data => {
+fetch('/getlocations').then(res => res.json()).then(data => {
 
     const globe = createGlobe(canvas, {
         devicePixelRatio: 2,
