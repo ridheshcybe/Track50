@@ -185,38 +185,6 @@ app.get("/:username/track50.js", (req, res) => {
     }))
 });
 
-app.get('/getcategory', async (req, res) => {
-    dblogger.debug(`Finding getcategory from username ${req.session.user} in table data`);
-    const { data, error } = await supabase
-        .from('data')
-        .select('browser_catagory,created_at')
-        .eq('username', req.session.user);
-
-    if (error) {
-        dblogger.error(`Unexpected error (getcategory(${req.session.user},data)): ${JSON.stringify(error)}`)
-        res.status(500);
-        res.send({ error });
-    } else {
-        res.send(data);
-    }
-});
-
-app.get('/getmetrics', async (req, res) => {
-    dblogger.debug(`Finding getmertrics from username ${req.session.user} in table data`);
-    const { data, error } = await supabase
-        .from('user_reg_data')
-        .select('unique_visits,avg_duration,bounce_rate')
-        .eq('username', req.session.user);
-
-    if (error) {
-        dblogger.error(`Unexpected error (getmertrics(${req.session.user},user_reg_data)): ${JSON.stringify(error)}`)
-        res.status(500);
-        res.send({ error });
-    } else {
-        res.send(data);
-    }
-})
-
 app.post('/signup', authpageRedirect(), async (req, res) => {
     const { username, password, confirmation } = req.body;
 
@@ -350,8 +318,25 @@ app.get('/getlocationsall', async (req, res) => {
     }
 });
 
-app.get('/getinfo', dashboardRedirect(), (req, res) => {
-    res.send(req.session.user);
+app.get('/getinfo', dashboardRedirect(), async (req, res) => {
+    dblogger.debug(`Finding getcategory from username ${req.session.user} in table data`);
+    dblogger.debug(`Finding getmertrics from username ${req.session.user} in table data`);
+    const { data, error } = await supabase
+        .from('user_reg_data')
+        .select('unique_visits,avg_duration,bounce_rate')
+        .eq('username', req.session.user);
+    const { data: cat, error: cate } = await supabase
+        .from('data')
+        .select('browser_catagory,created_at')
+        .eq('username', req.session.user);
+
+    if (error || cate) {
+        dblogger.error(`Unexpected error (getmertrics(${req.session.user},user_reg_data)): ${JSON.stringify(error || cate)}`)
+        res.status(500);
+        res.send({ error });
+    } else {
+        res.send({ metrics: data[0], name: req.session.user, chart: cat });
+    }
 });
 
 const server = app.listen(port, () => {

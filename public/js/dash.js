@@ -62,20 +62,20 @@
     Chart.defaults.color = "#FFFFFF";
     Chart.defaults.borderColor = "#000000";
 
-    fetch('/getcategory').then(res => res.json()).then(data => {
+    fetch('/getinfo').then(res => res.json()).then(e => {
         // Parse the data and convert created_at to Date objects
-        data.forEach(item => {
+        e.chart.forEach(item => {
             item.created_at = new Date(item.created_at);
         });
 
         // Calculate the total time difference in milliseconds
         let totalMillis = 0;
-        for (let i = 1; i < data.length; i++) {
-            totalMillis += data[i].created_at - data[i - 1].created_at;
+        for (let i = 1; i < e.chart.length; i++) {
+            totalMillis += e.chart[i].created_at - e.chart[i - 1].created_at;
         }
 
         // Calculate the average time difference in milliseconds
-        const avgMillis = totalMillis / (data.length - 1);
+        const avgMillis = totalMillis / (e.chart.length - 1);
 
         // Convert the average time difference to appropriate units
         let avgTime, timeUnit;
@@ -96,7 +96,7 @@
 
         // Prepare data for plotting
         const categories = [...new Set(data.map(item => item.browser_catagory))];
-        const counts = categories.map(cat => data.filter(item => item.browser_catagory === cat).length);
+        const counts = categories.map(cat => e.chart.filter(item => item.browser_catagory === cat).length);
 
         // Plotting the data using a simple chart library like Chart.js
         const ctx = document.getElementById('Browser_category').getContext('2d');
@@ -123,15 +123,11 @@
                 }
             }
         });
-    }).catch(alert)
 
-    fetch('/getmetrics').then(res => res.json()).then(data => {
-        document.getElementById('unique_visits').innerText = data[0]['unique_visits'];
-        document.getElementById('avg_duration').innerText = data[0]['avg_duration'];
-        document.getElementById('bounce_rate').innerText = data[0]['bounce_rate'];
-    }).catch(alert)
 
-    fetch('/getinfo').then(e => e.text()).then(e => {
-        document.getElementById('username').innerText = e;
+        document.getElementById('unique_visits').innerText = e.metrics[0]['unique_visits'];
+        document.getElementById('avg_duration').innerText = e.metrics[0]['avg_duration'];
+        document.getElementById('bounce_rate').innerText = e.metrics[0]['bounce_rate'];
+        document.getElementById('username').innerText = e.name;
     }).catch(alert)
 })(jQuery);
