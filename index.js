@@ -1,14 +1,29 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import winston from 'winston';
 import express from "express";
 import { resolve } from "path";
 import { config } from "dotenv";
 import wshandler from "express-ws";
-import SocketManager from "cybe-socket";
 import bodyParser from "body-parser";
 import session from "express-session";
+import SocketManager from "cybe-socket";
 import { compile } from "./views/compiler.js";
 import { createClient } from "@supabase/supabase-js";
+
+const logger = winston.createLogger({
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'combined.log' }),
+    ],
+});
+const dblogger = winston.createLogger({
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.File({ filename: 'db.log' }),
+    ],
+});
 
 config();
 
@@ -21,7 +36,7 @@ const port = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
 app.use(session({
-    secret: crypto.randomUUID(),
+    secret: 'prod',
     cookie: { secure: process.env.NODE_ENV === 'production' }, // secure only in production
     saveUninitialized: true,
     resave: true
@@ -48,19 +63,18 @@ function dashboardRedirect() {
 
 async function insert(Newdata, table = "users") {
     try {
-        const { error } = await supabase
-            .from(table)
-            .insert([
-                Newdata
-            ]);
+        dblogger.debug(`Inserting ${JSON.stringify(Newdata)} to ${table}`);
+        const { error } = await supabase.from(table).insert([Newdata]);
 
         if (error) {
+            dblogger.error(`Error inseting user (insert(?,${table})): ${JSON.stringify(error)}`)
             console.error('Error inserting user:', error);
             return error;
         }
 
         return null;
     } catch (error) {
+        dblogger.error(`Unexpected error (insert(?,${table})): ${JSON.stringify(error)}`)
         console.error('Unexpected error:', error);
         return error;
     }
@@ -68,18 +82,21 @@ async function insert(Newdata, table = "users") {
 
 async function find(username, table = "users") {
     try {
+        dblogger.debug(`Finding user ${username} in ${table}`);
         const { data, error } = await supabase
             .from(table)
             .select('*')
             .eq('username', username);
 
         if (error) {
+            dblogger.error(`Error inseting user (find(${username},${table})): ${JSON.stringify(error)}`)
             console.error('Error finding user:', error);
             return [error, null];
         }
 
         return [null, data];
     } catch (error) {
+        dblogger.error(`Unexpected error (find(${username},${table})): ${JSON.stringify(error)}`)
         console.error('Unexpected error:', error);
         return [error, null];
     }
@@ -115,8 +132,9 @@ app.ws('/track50', (ws, req) => {
     let currenttime = Date.now();
     const handler = new SocketManager(ws, {
         onclose: () => {
+            if (!data || !data.id) return;
             let totaltime = Date.now() - currenttime;
-            // Check if the user_id exists
+            dblogger.debug(`Finding user_id ${data.id} in table data`);
             supabase
                 .from('data')
                 .select('*')
@@ -125,6 +143,7 @@ app.ws('/track50', (ws, req) => {
                     const selectError = dat.error;
                     if (selectError) return;
                     if (existingData.length > 0) {
+                        dblogger.debug(`Updating existinguser user_id ${data.id} in table data`);
                         supabase
                             .from('data')
                             .update({
@@ -133,6 +152,7 @@ app.ws('/track50', (ws, req) => {
                             })
                             .eq('user_id', data.id).then(() => { })
                     } else {
+                        dblogger.debug(`Inserting new user_id ${data.id} in table data`);
                         supabase
                             .from('data')
                             .insert({
@@ -167,12 +187,14 @@ app.get("/:username/track50.js", (req, res) => {
 });
 
 app.get('/getcategory', async (req, res) => {
+    dblogger.debug(`Finding getcategory from username ${req.session.user} in table data`);
     const { data, error } = await supabase
         .from('data')
         .select('browser_catagory,created_at')
         .eq('username', req.session.user);
 
     if (error) {
+        dblogger.error(`Unexpected error (getcategory(${req.session.user},data)): ${JSON.stringify(error)}`)
         res.status(500);
         res.send({ error });
     } else {
@@ -181,12 +203,14 @@ app.get('/getcategory', async (req, res) => {
 });
 
 app.get('/getmetrics', async (req, res) => {
+    dblogger.debug(`Finding getmertrics from username ${req.session.user} in table data`);
     const { data, error } = await supabase
         .from('user_reg_data')
         .select('unique_visits,avg_duration,bounce_rate')
         .eq('username', req.session.user);
 
     if (error) {
+        dblogger.error(`Unexpected error (getmertrics(${req.session.user},user_reg_data)): ${JSON.stringify(error)}`)
         res.status(500);
         res.send({ error });
     } else {
@@ -222,7 +246,6 @@ app.post('/signup', authpageRedirect(), async (req, res) => {
     }
 
     if (found[1].length == 1) {
-        console.log(found[1])
         res.status(400);
         return res.send("Duplicate username")
     }
@@ -265,12 +288,14 @@ app.post('/login', authpageRedirect(), async (req, res) => {
     }
 
     try {
+        dblogger.debug(`Finding exists from username ${username} in table user_reg`);
         const { data, error } = await supabase
             .from('user_reg')
             .select('*')
             .eq('username', username);
 
         if (error) {
+            dblogger.error(`Unexpected error (login(${username},user_reg_data)): ${JSON.stringify(error)}`)
             res.status(500).send(`Unexpected error: ${JSON.stringify(error)}`);
             return;
         }
@@ -288,12 +313,14 @@ app.post('/login', authpageRedirect(), async (req, res) => {
 });
 
 app.get('/getlocations', dashboardRedirect(), async (req, res) => {
+    dblogger.debug(`Finding getlocations from username ${req.session.user} in table data`);
     let { data, error } = await supabase
         .from('data')
         .select('ip_loc')
         .eq('username', req.session.user);
 
     if (error) {
+        dblogger.error(`Unexpected error (login(${username},user_reg_data)): ${JSON.stringify(error)}`)
         res.status(500);
         res.send({ error });
     } else {
@@ -326,7 +353,7 @@ app.get('/getlocationsall', async (req, res) => {
 
 app.get('/getinfo', dashboardRedirect(), (req, res) => {
     res.send(req.session.user);
-})
+});
 
 const server = app.listen(port, () => {
     console.log(`Server running on port ${port}`);
