@@ -95,7 +95,7 @@
         }
 
         // Prepare data for plotting
-        const categories = [...new Set(data.map(item => item.browser_catagory))];
+        const categories = [...new Set(e.chart.map(item => item.browser_catagory))];
         const counts = categories.map(cat => e.chart.filter(item => item.browser_catagory === cat).length);
 
         // Plotting the data using a simple chart library like Chart.js
