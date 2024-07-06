@@ -37,7 +37,6 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 app.use(session({
     secret: 'prod',
-    cookie: { secure: process.env.NODE_ENV === 'production' }, // secure only in production
     saveUninitialized: true,
     resave: true
 }));
